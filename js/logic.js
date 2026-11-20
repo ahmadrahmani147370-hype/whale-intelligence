@@ -7,25 +7,37 @@
     So11111111111111111111111111111111111111112: 1, // wSOL
     EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: 1, // USDC
     Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB: 1, // USDT
+    "7gYApPvSCL95okszeWNY1ALSnLwor6ei4v4CqzU2B1jt": 1, // USD1
+    "2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo": 1, // PYUSD
     JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN: 1, // JUP
     "4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R": 1, // RAY
     jtojtomepa8beP8AuQc6eXt5FriJwfFMwQx2v2f9mCL: 1, // JTO
     HZ1JovNiVvGrGNiiYvEozEVgZ58xaU3RKwX8eACQBCt3: 1, // PYTH
     "85VBFQZC9TZkfaptBWjvUw7YbZjy52A6mjtPGjstQAmQ": 1, // W
+    "27G8MtK7VtTcCHkpASjSDdkWWYfoqT6ggEuKidVJidD4": 1, // JLP
     mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So: 1, // mSOL
     J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn: 1, // JitoSOL
-    bSo13r4TkiE4KumL71LsHTPpL2euBYLFx6h9HP3piy1: 1 // bSOL
+    bSo13r4TkiE4KumL71LsHTPpL2euBYLFx6h9HP3piy1: 1, // bSOL
+    "7dHbWXmci3dT8UFYWYZweBLXgycu7Y3iL6trKn1Y7ARj": 1 // stSOL
   };
 
   var QUOTE_MINTS = {
     So11111111111111111111111111111111111111112: 1,
     EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: 1,
-    Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB: 1
+    Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB: 1,
+    "7gYApPvSCL95okszeWNY1ALSnLwor6ei4v4CqzU2B1jt": 1,
+    "2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo": 1
+  };
+
+  var QUOTE_SYMBOLS = {
+    SOL: 1, WSOL: 1, USDC: 1, USDT: 1, USD1: 1, PYUSD: 1, USDS: 1, UXD: 1, USDH: 1, EURC: 1
   };
 
   var EXCLUDE_SYMBOLS = {
-    SOL: 1, WSOL: 1, USDC: 1, USDT: 1, JUP: 1, RAY: 1, JTO: 1, PYTH: 1,
-    MSOL: 1, JITOSOL: 1, BSOL: 1, JLP: 1
+    SOL: 1, WSOL: 1, USDC: 1, USDT: 1, USD1: 1, PYUSD: 1, USDS: 1, UXD: 1, USDH: 1, EURC: 1,
+    JUP: 1, RAY: 1, JTO: 1, PYTH: 1, JLP: 1, ORCA: 1, HNT: 1, RENDER: 1, MNGO: 1,
+    MSOL: 1, JITOSOL: 1, BSOL: 1, STSOL: 1, INF: 1,
+    WBTC: 1, WETH: 1, CBBTC: 1
   };
 
   var WINDOWS = { "1h": 3600000, "6h": 21600000, "24h": 86400000, "7d": 604800000, all: Infinity };
@@ -111,16 +123,79 @@
     return (QUOTE_MINTS[quote] ? 1e15 : 0) + liq;
   }
 
+  function tokenOf(token) {
+    if (!token || !token.address && !token.mint) return null;
+    return {
+      mint: token.mint || token.address,
+      symbol: token.symbol || "",
+      name: token.name || ""
+    };
+  }
+
+  function isQuote(token) {
+    if (!token) return false;
+    if (token.mint && QUOTE_MINTS[token.mint]) return true;
+    return !!QUOTE_SYMBOLS[String(token.symbol || "").toUpperCase()];
+  }
+
+  function isNonMeme(token) {
+    if (!token) return true;
+    if (token.mint && EXCLUDE_MINTS[token.mint]) return true;
+    return !!EXCLUDE_SYMBOLS[String(token.symbol || "").toUpperCase()];
+  }
+
+  /**
+   * The meme is the side that is not SOL, a stable, an LST, or a major.
+   * The other side must be SOL or a stable. Stock/stock and major/SOL pairs return null.
+   */
+  function memeSide(base, quote) {
+    if (!base || !quote || !base.mint || !quote.mint || base.mint === quote.mint) return null;
+    var baseQuote = isQuote(base);
+    var quoteQuote = isQuote(quote);
+    if (quoteQuote && !baseQuote && !isNonMeme(base)) return base;
+    if (baseQuote && !quoteQuote && !isNonMeme(quote)) return quote;
+    return null;
+  }
+
+  function cleanLabel(value) {
+    var text = String(value == null ? "" : value).trim();
+    if (!text || text === "?" || text === "Unknown" || text === "Unknown token") return "";
+    if (isAddr(text)) return "";
+    return text;
+  }
+
+  function coinParts(row) {
+    var symbol = cleanLabel(row && row.symbol);
+    var name = cleanLabel(row && row.name);
+    if (symbol && name && symbol.toLowerCase() === name.toLowerCase()) name = "";
+    var mint = row && row.mint || "";
+    return {
+      symbol: symbol,
+      name: name,
+      fallback: !symbol && !name ? shortAddr(mint) : "",
+      missing: !symbol && !name
+    };
+  }
+
   function coinFromPair(pair) {
+    if (!pair || pair.chainId !== "solana") return null;
+    var base = tokenOf(pair.baseToken);
+    var quote = tokenOf(pair.quoteToken);
+    var meme = memeSide(base, quote);
+    if (!meme) return null;
     var liq = pair.liquidity && pair.liquidity.usd != null ? Number(pair.liquidity.usd) : null;
-    var mc = pair.marketCap != null ? Number(pair.marketCap) : null;
-    var price = pair.priceUsd != null ? Number(pair.priceUsd) : null;
+    var mc = null;
+    var price = null;
+    if (base && base.mint === meme.mint) {
+      mc = pair.marketCap != null ? Number(pair.marketCap) : null;
+      price = pair.priceUsd != null ? Number(pair.priceUsd) : null;
+    }
     var vol = pair.volume && pair.volume.h24 != null ? Number(pair.volume.h24) : null;
     var url = typeof pair.url === "string" && pair.url.indexOf("https://dexscreener.com/") === 0 ? pair.url : "";
     return {
-      mint: pair.baseToken.address,
-      symbol: pair.baseToken.symbol || "?",
-      name: pair.baseToken.name || pair.baseToken.symbol || "Unknown",
+      mint: meme.mint,
+      symbol: meme.symbol || "",
+      name: meme.name || "",
       priceUsd: isFinite(price) ? price : null,
       marketCap: isFinite(mc) ? mc : null,
       liquidity: isFinite(liq) ? liq : null,
@@ -137,23 +212,22 @@
   function bestPairsByMint(pairs) {
     var best = new Map();
     (pairs || []).forEach(function (pair) {
-      if (!pair || pair.chainId !== "solana" || !pair.baseToken || !pair.baseToken.address) return;
-      var mint = pair.baseToken.address;
-      if (EXCLUDE_MINTS[mint]) return;
-      var sym = String(pair.baseToken.symbol || "").toUpperCase();
-      if (EXCLUDE_SYMBOLS[sym]) return;
-      var prev = best.get(mint);
-      if (!prev || pairScore(pair) > pairScore(prev)) best.set(mint, pair);
+      var coin = coinFromPair(pair);
+      if (!coin) return;
+      var prev = best.get(coin.mint);
+      if (!prev || pairScore(pair) > pairScore(prev)) best.set(coin.mint, pair);
     });
     var out = new Map();
-    best.forEach(function (pair, mint) { out.set(mint, coinFromPair(pair)); });
+    best.forEach(function (pair, mint) {
+      var coin = coinFromPair(pair);
+      if (coin) out.set(mint, coin);
+    });
     return out;
   }
 
-  function tradeSide(base, fromMint, toMint, kind) {
-    if (toMint && toMint === base) return "buy";
-    if (fromMint && fromMint === base) return "sell";
-    if (kind === "buy" || kind === "sell") return kind;
+  function tradeSide(memeMint, fromMint, toMint) {
+    if (toMint && toMint === memeMint) return "buy";
+    if (fromMint && fromMint === memeMint) return "sell";
     return null;
   }
 
@@ -409,6 +483,11 @@
     EXCLUDE_MINTS: EXCLUDE_MINTS,
     EXCLUDE_SYMBOLS: EXCLUDE_SYMBOLS,
     QUOTE_MINTS: QUOTE_MINTS,
+    isQuote: isQuote,
+    isNonMeme: isNonMeme,
+    memeSide: memeSide,
+    cleanLabel: cleanLabel,
+    coinParts: coinParts,
     WINDOWS: WINDOWS,
     isAddr: isAddr,
     isSig: isSig,

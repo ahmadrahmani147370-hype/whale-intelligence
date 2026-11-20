@@ -256,9 +256,13 @@
     return '<div class="actions">' + html + "</div>";
   }
 
-  function coinLink(mint, symbol) {
-    if (!WI.isAddr(mint)) return WI.esc(symbol || mint || "");
-    return '<a href="#/coin/' + encodeURIComponent(mint) + '">' + WI.esc(symbol || WI.shortAddr(mint)) + "</a>";
+  function coinCell(row) {
+    var parts = WI.coinParts(row || {});
+    var label = parts.symbol || parts.name || parts.fallback || "Unknown";
+    var extra = parts.symbol && parts.name ? ' <span class="coin-name">' + WI.esc(parts.name) + "</span>" : "";
+    var text = WI.esc(label) + extra;
+    if (!WI.isAddr(row && row.mint)) return text;
+    return '<a class="coin-link" href="#/coin/' + encodeURIComponent(row.mint) + '">' + text + "</a>";
   }
 
   function walletLink(address) {
@@ -296,9 +300,7 @@
       { key: "side", label: "Side", cls: function (t) { return t.side === "sell" ? "sell" : "buy"; }, cell: function (t) {
         return t.side === "sell" ? "SELL" : "BUY";
       } },
-      { key: "symbol", label: "Coin", cell: function (t) {
-        return coinLink(t.mint, t.symbol) + ' <span class="muted">' + WI.esc(t.name || "") + "</span>";
-      } },
+      { key: "symbol", label: "Coin", cell: function (t) { return coinCell(t); } },
       { key: "usd", label: "USD", cls: function () { return "num"; }, cell: function (t) { return WI.esc(money(t)); } },
       { key: "wallet", label: "Wallet", cell: function (t) { return walletLink(t.wallet); } },
       { key: "marketCap", label: "Market cap", cls: function () { return "num"; }, cell: function (t) {
@@ -404,9 +406,7 @@
 
   function coinColumns() {
     return [
-      { key: "symbol", label: "Coin", cell: function (row) {
-        return coinLink(row.mint, row.symbol) + ' <span class="muted">' + WI.esc(row.name || "") + "</span>";
-      } },
+      { key: "symbol", label: "Coin", cell: function (row) { return coinCell(row); } },
       { key: "priceUsd", label: "Price", cls: function () { return "num"; }, cell: function (row) { return WI.esc(WI.formatPrice(row.priceUsd)); } },
       { key: "marketCap", label: "Market cap", cls: function () { return "num"; }, cell: function (row) { return WI.esc(WI.formatUsd(row.marketCap)); } },
       { key: "liquidity", label: "Liquidity", cls: function () { return "num"; }, cell: function (row) { return WI.esc(WI.formatUsd(row.liquidity)); } },
@@ -424,7 +424,7 @@
     var unverifiedKey = kind === "sell" ? "unverifiedSell" : "unverifiedBuy";
     var combinedKey = kind === "sell" ? "combinedSell" : "combinedBuy";
     return [
-      { key: "symbol", label: "Coin", cell: function (row) { return coinLink(row.mint, row.symbol); } },
+      { key: "symbol", label: "Coin", cell: function (row) { return coinCell(row); } },
       { key: verifiedKey, label: "Verified", cls: function () { return "num"; }, cell: function (row) { return WI.esc(WI.formatUsd(row[verifiedKey])); } },
       { key: unverifiedKey, label: "Unverified", cls: function () { return "num"; }, cell: function (row) { return WI.esc(WI.formatUsd(row[unverifiedKey])); } },
       { key: combinedKey, label: "Combined", cls: function () { return "num"; }, cell: function (row) { return WI.esc(WI.formatUsd(row[combinedKey])); } },
@@ -540,7 +540,12 @@
     var pool = shownRows(coinTrades, 60);
     var tot = WI.totals(coinTrades);
     var lookup = state.lookups[mint];
-    var heading = coin ? WI.esc(coin.symbol) + " · " + WI.esc(coin.name) : "Coin";
+    var parts = coin ? WI.coinParts(coin) : null;
+    var heading = "Coin";
+    if (parts) {
+      heading = WI.esc(parts.symbol || parts.name || WI.shortAddr(coin.mint) || "Coin");
+      if (parts.symbol && parts.name) heading += " · " + WI.esc(parts.name);
+    }
     var html = "<h2 class=\"page-title\">" + heading + " " + modeBadge() + "</h2>";
     if (!coin && lookup === "loading") return html + '<p class="empty">Looking up this mint on DexScreener…</p>';
     if (!coin && WI.EXCLUDE_MINTS[mint]) return html + '<p class="empty">That mint is on the major or stablecoin exclude list and is not tracked as a meme coin.</p>';
@@ -774,8 +779,10 @@
     if (!state.live) return state.loading ? "Loading live sources…" : "";
     var names = (state.live.scanned || []).map(function (row) { return row.symbol; });
     var line = names.length
-      ? "Live totals use recent GeckoTerminal trades for " + names.length + " Solana pools (" + names.join(", ") + "). Trades under $500 are not requested. This is not a full-chain scan."
-      : "No pools passed the market cap filter, so there are no pool trades to total.";
+      ? "Live totals use recent GeckoTerminal trades for " + names.length + " Solana meme pools (" + names.join(", ") + "). The feed is asked for trades at or above the minimum trade size, and at least $500. This is not a full-chain scan."
+      : ((state.live.notes || []).length
+        ? "No pool trades were returned. The public trade feed may be rate-limiting this browser."
+        : "No meme pools passed the market cap filter, so there are no pool trades to total.");
     line += " Wallet pages can load Solana RPC history separately. That USD is estimated and is not added to these totals.";
     return line;
   }
@@ -855,12 +862,26 @@
     renderView();
   }
 
+  function tradeRequestFloor() {
+    var n = Number(state.settings.minTrade);
+    if (!isFinite(n) || n < 500) return 500;
+    return n;
+  }
+
+  function liveIsFresh(live) {
+    if (!live || !live.savedAt || Date.now() - live.savedAt > 180000) return false;
+    if (live.scannedFloor !== state.settings.minMcap) return false;
+    if (live.tradeFloor == null || live.tradeFloor > tradeRequestFloor()) return false;
+    return true;
+  }
+
   function readCache(floor) {
     try {
       var raw = sessionStorage.getItem(CACHE_KEY);
       if (!raw) return null;
       var cached = JSON.parse(raw);
       if (!cached || cached.scannedFloor !== floor) return null;
+      if (cached.tradeFloor == null || cached.tradeFloor > tradeRequestFloor()) return null;
       if (!cached.savedAt || Date.now() - cached.savedAt > 180000) return null;
       return cached;
     } catch (err) {
@@ -875,9 +896,7 @@
   async function ensureLive(force) {
     if (state.settings.mode !== "live") return;
     if (state.loading) return;
-    if (!force && state.live && state.live.scannedFloor === state.settings.minMcap && state.live.savedAt && Date.now() - state.live.savedAt < 180000) {
-      return;
-    }
+    if (!force && liveIsFresh(state.live)) return;
     var cached = !force && readCache(state.settings.minMcap);
     if (cached) {
       state.live = cached;
@@ -892,6 +911,7 @@
     try {
       var live = await window.WIApi.loadLive({
         minMcap: state.settings.minMcap,
+        minTrade: state.settings.minTrade,
         onProgress: function (i, n, symbol) {
           if (token !== state.loadToken) return;
           state.progress = "Reading pool trades " + i + "/" + n + " (" + symbol + ")…";
@@ -997,9 +1017,9 @@
 
   var mcapTimer = 0;
   function onFilters() {
-    var floorChanged = readFilterNumbers();
+    readFilterNumbers();
     render();
-    if (floorChanged && state.settings.mode === "live") {
+    if (state.settings.mode === "live") {
       clearTimeout(mcapTimer);
       mcapTimer = setTimeout(function () { ensureLive(false); }, 400);
     }

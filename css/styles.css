@@ -1,13 +1,14 @@
 :root {
   color-scheme: dark;
-  --bg: #000;
-  --fg: #fff;
-  --muted: #a3a3a3;
-  --line: #2a2a2a;
+  --bg: #070708;
+  --fg: #f4f4f2;
+  --muted: rgba(244, 244, 242, 0.64);
+  --line: rgba(244, 244, 242, 0.16);
+  --accent: #f0b429;
+  --ink: #14120b;
   --buy: #1fdb6a;
   --sell: #ff4d4f;
-  --demo: #e6b325;
-  --card: #070707;
+  --card: #101012;
 }
 
 * { box-sizing: border-box; }
@@ -22,20 +23,31 @@ body {
 a { color: var(--fg); }
 a:visited { color: var(--fg); }
 a:hover { text-decoration: underline; }
+a.coin-link,
+a.coin-link:visited { color: var(--accent); font-weight: 700; text-decoration: none; }
+a.coin-link:hover { text-decoration: underline; }
+a.coin-link .coin-name { color: var(--fg); font-weight: 500; margin-left: 6px; }
 
 button, input, select {
   font: inherit;
   color: var(--fg);
-  background: #000;
-  border: 1px solid #444;
+  background: var(--bg);
+  border: 1px solid var(--line);
   border-radius: 0;
   padding: 6px 8px;
 }
 
 button { cursor: pointer; }
-button:hover { border-color: #fff; }
+button:hover { border-color: var(--accent); }
 button:disabled { opacity: 0.55; cursor: default; }
-button[aria-pressed="true"] { background: #fff; color: #000; }
+button[aria-pressed="true"],
+.search button,
+button[type="submit"] {
+  background: var(--accent);
+  color: var(--ink);
+  border-color: var(--accent);
+  font-weight: 700;
+}
 
 .wrap { max-width: 1200px; margin: 0 auto; padding: 16px; }
 
@@ -43,6 +55,7 @@ header h1 {
   margin: 0;
   font-size: 22px;
   letter-spacing: 0.08em;
+  color: var(--accent);
 }
 
 .tag { margin: 4px 0 0; color: var(--muted); }
@@ -71,13 +84,14 @@ header h1 {
   border: 1px solid var(--line);
   padding: 6px 8px;
   white-space: nowrap;
-  color: #fff;
+  color: var(--fg);
 }
 
 .nav a[aria-current="page"],
 .nav a[aria-current="page"]:visited {
-  background: #fff;
-  color: #000;
+  background: var(--accent);
+  color: var(--ink);
+  border-color: var(--accent);
 }
 
 .banner {
@@ -91,8 +105,8 @@ header h1 {
   justify-content: space-between;
 }
 
-.banner.live { border-color: #444; }
-.banner.demo { border-color: var(--demo); }
+.banner.live { border-color: var(--line); }
+.banner.demo { border-color: var(--accent); }
 .banner p { margin: 0; max-width: 760px; }
 .banner .modes { display: flex; gap: 6px; flex-wrap: wrap; }
 
@@ -116,7 +130,7 @@ header h1 {
   padding: 8px 10px;
   margin: 8px 0;
 }
-.warn { border: 1px solid var(--demo); color: var(--demo); }
+.warn { border: 1px solid var(--accent); color: var(--accent); }
 .err { border: 1px solid var(--sell); color: var(--sell); }
 .empty { border: 1px solid var(--line); color: var(--muted); }
 
@@ -132,9 +146,9 @@ header h1 {
   padding: 12px;
 }
 
-.group-verified { border: 1px solid #fff; }
-.group-unverified { border: 1px dashed #aaa; }
-.group-combined { border: 3px double #fff; }
+.group-verified { border: 1px solid var(--fg); }
+.group-unverified { border: 1px dashed var(--muted); }
+.group-combined { border: 3px double var(--accent); }
 
 .group h2 {
   margin: 0 0 8px;
@@ -172,11 +186,15 @@ header h1 {
   vertical-align: middle;
 }
 
-.badge.demo, .badge.est { color: var(--demo); }
-.badge.live, .badge.tier-verified { color: #fff; }
-.badge.tier-unverified { color: #ccc; border-style: dashed; }
+.badge.demo, .badge.est { color: var(--accent); }
+.badge.live, .badge.tier-verified { color: var(--fg); }
+.badge.tier-unverified { color: var(--muted); border-style: dashed; }
 
-h2.page-title { font-size: 18px; margin: 8px 0; }
+h2.page-title {
+  font-size: 18px;
+  margin: 8px 0;
+  color: var(--accent);
+}
 
 .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 8px 0 16px; }
 
@@ -190,7 +208,7 @@ th button {
   color: inherit;
   font-weight: 700;
 }
-tbody tr:hover { background: #111; }
+tbody tr:hover { background: #16161a; }
 
 .actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .actions button, button.small { font-size: 12px; }
@@ -214,7 +232,7 @@ tbody tr:hover { background: #111; }
 .detail div { border: 1px solid var(--line); padding: 8px; }
 .detail span { display: block; color: var(--muted); font-size: 12px; }
 
-footer { color: #777; font-size: 12px; margin-top: 28px; }
+footer { color: var(--muted); font-size: 12px; margin-top: 28px; }
 footer p { margin: 4px 0; }
 
 .sr-only {

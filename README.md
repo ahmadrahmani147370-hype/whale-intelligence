@@ -44,8 +44,8 @@ Live mode is the default. The banner at the top says **LIVE DATA**.
 
 Limits, so the numbers are not oversold:
 
-- Whale totals use the recent trades GeckoTerminal returns for up to **6** highest-volume Solana pools that pass the market cap filter. Trades under **$500** are not requested. This is not a full-chain scan.
-- The meme list is Solana tokens from DexScreener boost and profile feeds, minus majors and stablecoins listed in `js/logic.js`. It is not a perfect meme classifier.
+- Whale totals use the recent trades GeckoTerminal returns for up to **4** Solana meme pools that pass the market cap filter and have a trade at or above the minimum trade size. The request floor is at least **$500**, so smaller prints do not fill the feed. This is not a full-chain scan.
+- Only Solana meme coins are kept. A pair counts when one side is the meme and the other side is SOL or a stablecoin. Majors, stablecoins, and LSTs in `js/logic.js` are dropped, including when they sit on the non-SOL side. Pools come from GeckoTerminal's Solana trending list and PumpSwap volume list, plus DexScreener boosts. Each row shows the token symbol and name from the pool tokens, then DexScreener, then a GeckoTerminal token lookup. A shortened mint is shown only when every lookup has no name.
 - If DexScreener or the pool scan fails, totals are hidden or marked incomplete. Sample numbers are not substituted.
 - RPC history on a wallet page is the latest 8 signatures. A swap is inferred from that wallet's token balance change. USD is the token amount times the **current** DexScreener price, so it is marked **ESTIMATE**. Those rows are **not** added to dashboard totals.
 - Public endpoints rate-limit. The page shows the error it got.
