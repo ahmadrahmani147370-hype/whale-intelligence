@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WHALE INTELLIGENCE</title>
+  <meta name="description" content="WHALE INTELLIGENCE tracks Solana meme coin whale buys and sells. Verified wallets, unverified wallets, and combined totals stay separate.">
+  <meta property="og:title" content="WHALE INTELLIGENCE">
+  <meta property="og:description" content="Solana meme coin whale buys, sells, and wallet activity. Verified and unverified totals stay separate.">
+  <meta name="theme-color" content="#000000">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23000'/%3E%3Ctext x='1' y='13' fill='%23fff' font-size='13' font-family='sans-serif'%3EW%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="top">
+        <div>
+          <h1>WHALE INTELLIGENCE</h1>
+          <p class="tag">Solana meme coin whales</p>
+        </div>
+        <form id="search-form" class="search" role="search">
+          <label class="sr-only" for="q">Search coins and wallets</label>
+          <input id="q" name="q" type="search" placeholder="Symbol, name, or address" autocomplete="off">
+          <button type="submit">Search</button>
+        </form>
+      </div>
+      <nav class="nav" aria-label="Sections">
+        <a href="#/dashboard" data-nav="dashboard">Dashboard</a>
+        <a href="#/verified" data-nav="verified">Verified Whales</a>
+        <a href="#/unverified" data-nav="unverified">Unverified Whales</a>
+        <a href="#/buys" data-nav="buys">Whale Buys</a>
+        <a href="#/sells" data-nav="sells">Whale Sells</a>
+        <a href="#/coins" data-nav="coins">Coins</a>
+        <a href="#/wallets" data-nav="wallets">Wallets</a>
+        <a href="#/watchlist" data-nav="watchlist">Watchlist</a>
+        <a href="#/alerts" data-nav="alerts">Alerts</a>
+      </nav>
+    </header>
+    <div id="mode-banner" class="banner live" role="status"></div>
+    <form id="filters" class="filters" aria-label="Filters"></form>
+    <div id="notice"></div>
+    <main id="view" data-page="dashboard">
+      <p class="empty">Loading WHALE INTELLIGENCE…</p>
+    </main>
+    <footer>
+      <p>WHALE INTELLIGENCE is a static page. Watchlists and wallets you add stay in this browser. Not financial advice.</p>
+      <p>Live sources: DexScreener, GeckoTerminal, and a public Solana RPC. Sample rows are DEMO DATA from data/demo-data.js.</p>
+    </footer>
+  </div>
+  <noscript><p>WHALE INTELLIGENCE needs JavaScript to load pages, filters, and live data.</p></noscript>
+  <script src="data/whales.js"></script>
+  <script src="data/demo-data.js"></script>
+  <script src="js/logic.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
