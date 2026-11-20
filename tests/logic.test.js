@@ -161,4 +161,54 @@ assert.ok(html.indexOf('src="js/app.js"') !== -1);
 assert.ok(!/<(?:script|link)[^>]+(?:src|href)="\//.test(html), "asset paths must stay relative");
 assert.ok(fs.existsSync(path.join(root, ".nojekyll")));
 
+var BONK = { mint: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263", symbol: "BONK", name: "Bonk" };
+var SOL = { mint: "So11111111111111111111111111111111111111112", symbol: "SOL", name: "Wrapped SOL" };
+var JUP = { mint: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN", symbol: "JUP", name: "Jupiter" };
+var USDC = { mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", symbol: "USDC", name: "USD Coin" };
+var USDT = { mint: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB", symbol: "USDT", name: "USDT" };
+assert.strictEqual(WI.memeSide(BONK, SOL).mint, BONK.mint);
+assert.strictEqual(WI.memeSide(SOL, BONK).mint, BONK.mint);
+assert.strictEqual(WI.memeSide(JUP, SOL), null);
+assert.strictEqual(WI.memeSide(USDC, USDT), null);
+assert.strictEqual(WI.memeSide(
+  { mint: "DPepeMintDemo111111111111111111111111111", symbol: "DCTY", name: "Dacity" },
+  { mint: "TTWofwAge91oFhZs7kpQdyrVRkmevgM88xijGvQFbKo", symbol: "TTWO", name: "TTWO" }
+), null);
+assert.strictEqual(WI.memeSide(BONK, USDC).symbol, "BONK");
+assert.strictEqual(WI.tradeSide(BONK.mint, SOL.mint, BONK.mint), "buy");
+assert.strictEqual(WI.tradeSide(BONK.mint, USDC.mint, SOL.mint), null);
+
+var named = WI.coinParts({ mint: BONK.mint, symbol: "ANTS", name: "Anthropic" });
+assert.strictEqual(named.symbol, "ANTS");
+assert.strictEqual(named.name, "Anthropic");
+assert.strictEqual(named.missing, false);
+var same = WI.coinParts({ mint: BONK.mint, symbol: "Bonk", name: "bonk" });
+assert.strictEqual(same.symbol, "Bonk");
+assert.strictEqual(same.name, "");
+var blank = WI.coinParts({ mint: BONK.mint, symbol: "", name: "Unknown" });
+assert.strictEqual(blank.missing, true);
+assert.strictEqual(blank.fallback, "DezX…B263");
+
+var pair = WI.coinFromPair({
+  chainId: "solana",
+  dexId: "pumpswap",
+  pairAddress: "Pair11111111111111111111111111111111111111",
+  priceUsd: "0.01",
+  marketCap: 2000000,
+  liquidity: { usd: 100000 },
+  volume: { h24: 500000 },
+  url: "https://dexscreener.com/solana/pair",
+  baseToken: { address: BONK.mint, symbol: "BONK", name: "Bonk" },
+  quoteToken: { address: SOL.mint, symbol: "SOL", name: "Wrapped SOL" }
+});
+assert.strictEqual(pair.mint, BONK.mint);
+assert.strictEqual(pair.symbol, "BONK");
+assert.strictEqual(pair.name, "Bonk");
+assert.strictEqual(pair.marketCap, 2000000);
+assert.strictEqual(WI.coinFromPair({
+  chainId: "solana",
+  baseToken: { address: JUP.mint, symbol: "JUP", name: "Jupiter" },
+  quoteToken: { address: SOL.mint, symbol: "SOL", name: "Wrapped SOL" }
+}), null);
+
 console.log("logic.test.js: " + filtered.length + " default-filter demo trades, totals separated");
